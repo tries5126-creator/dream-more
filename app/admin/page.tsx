@@ -1,5 +1,7 @@
 "use client"
 
+import { useEffect, useState } from "react"
+import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -12,17 +14,64 @@ import {
 } from "lucide-react"
 
 export default function AdminDashboard() {
-  // Fallback stats when Supabase is not configured
-  const stats = {
+  const [stats, setStats] = useState({
     students: 0,
     courses: 0,
     services: 0,
     pendingRegistrations: 0,
     unreadMessages: 0,
     approvedRegistrations: 0,
-  }
-  
-  const recentRegistrations: any[] = []
+  })
+  const [recentRegistrations, setRecentRegistrations] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient()
+      const [students, courses, services, pending, messages, approved, recent] =
+        await Promise.all([
+          supabase
+            .from("profiles")
+            .select("id", { count: "exact", head: true })
+            .eq("role", "student"),
+          supabase
+            .from("courses")
+            .select("id", { count: "exact", head: true }),
+          supabase
+            .from("services")
+            .select("id", { count: "exact", head: true }),
+          supabase
+            .from("registrations")
+            .select("id", { count: "exact", head: true })
+            .in("status", ["pending", "payment_review"]),
+          supabase
+            .from("contact_messages")
+            .select("id", { count: "exact", head: true })
+            .eq("is_read", false),
+          supabase
+            .from("registrations")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "approved"),
+          supabase
+            .from("registrations")
+            .select("*, course:courses(*), student:profiles!registrations_student_id_fkey(*)")
+            .order("registered_at", { ascending: false })
+            .limit(5),
+        ])
+
+      setStats({
+        students: students.count || 0,
+        courses: courses.count || 0,
+        services: services.count || 0,
+        pendingRegistrations: pending.count || 0,
+        unreadMessages: messages.count || 0,
+        approvedRegistrations: approved.count || 0,
+      })
+      setRecentRegistrations(recent.data || [])
+      setLoading(false)
+    }
+    load()
+  }, [])
 
   const statCards = [
     { label: "Total Students", value: stats.students, icon: Users, color: "text-blue-500" },
@@ -39,6 +88,14 @@ export default function AdminDashboard() {
     approved: "bg-green-100 text-green-800",
     rejected: "bg-red-100 text-red-800",
     completed: "bg-gray-100 text-gray-800",
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    )
   }
 
   return (
