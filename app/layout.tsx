@@ -1,15 +1,14 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Inter, Space_Grotesk } from 'next/font/google'
 
 import './globals.css'
 
-const _geist = Geist({ subsets: ['latin'] })
-const _geistMono = Geist_Mono({ subsets: ['latin'] })
+const _inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+const _spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space-grotesk' })
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.app',
+  title: 'CreativeHub - Digital Services & Professional Training',
+  description: 'Full-service digital agency specializing in web development, design, marketing, and professional training courses.',
 }
 
 export default function RootLayout({
